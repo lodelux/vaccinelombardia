@@ -13,7 +13,13 @@ import random
 delay = 0
 range = 0
 retries = 1
+avoid = ["VARESE","Trenno"]
 
+def place_in_avoid(booking):
+    for place in avoid:
+        if place in booking.text:
+            return 1
+    return 0
 
 def elabWait(driver, timeout):
     element_not_present = EC.invisibility_of_element_located(
@@ -95,10 +101,10 @@ def getBookings(driver):
         "//label[contains(.,'Giorno')]")
     return bookings
 
- 
+
 counter = 0
 found = 0
- 
+
 while True and not found:
     try:
         timeout = 5
@@ -134,8 +140,8 @@ while True and not found:
                     print(driver.find_element_by_xpath(
                         "//li[contains(.,'Moderna o Pfizer')]").text)
 
-                    # accept if second dose > sept
-                    if (re.search("e il (\d\d/09/2021|31/08/2021)", driver.find_element_by_xpath("//li[contains(.,'Moderna o Pfizer')]").text)):
+                    # accept if second dose > sept && place not in avoid
+                    if (re.search("e il (\d\d/09/2021|31/08/2021)", driver.find_element_by_xpath("//li[contains(.,'Moderna o Pfizer')]").text)) and not place_in_avoid(booking):
                         driver.find_element_by_xpath(
                             "//button[contains(.,'SI')]").click()
                         found = 1
@@ -155,5 +161,6 @@ while True and not found:
             btn.click()
 
     except:
+        driver.delete_all_cookies()
         driver.close()
         continue
