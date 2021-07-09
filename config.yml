@@ -1,22 +1,25 @@
 #PERSONAL INFORMATIONS:
 
   #mandatory
-CodiceFiscale :  DLCLNZ01E14H501Q
+CodiceFiscale :  ABCDESKEJAIWNSJI
 #optional, leave 0 if you don't have it
-TesseraSanitaria : 80380001200151267758
+TesseraSanitaria : 9898987897987987889
 #mandatory, you will recieve the sms for confirming the booking here
-Phone : 3933615903
-#mandatory only if you have tessera sanitaria
-BirthDate : 14/05/2001
+Phone : 393198297829
+#mandatory only if you have tessera sanitaria (format: 09/07/2021)
+BirthDate : 0
 
 #FILTERS:
 
   #the vaccinations centers will be AROUND the place you select, but not only (if you put Milan you can get bookings in Como, etc.)
 
-FirstDose :
-  Start : 1/08/2021 
-  End :  1/09/2021
 
+#enter the range in which you would like to find a booking, extremes will be countend. (format: 09/07/2021)
+FirstDose :
+  Start : 1/07/2021 
+  End :  31/08/2021
+
+#the date of the first dose will determine the date for the second too, so you have to choose now the range for the second dose
 SecondDose :
   Start : 1/09/2021
   End : 10/10/2021
