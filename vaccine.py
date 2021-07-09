@@ -1,3 +1,4 @@
+from logging import exception
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
@@ -9,17 +10,43 @@ from selenium.webdriver.common.action_chains import ActionChains
 from time import sleep, ctime, time
 import re
 import random
+from datetime import datetime
 
+#config
 delay = 0
 range = 0
 retries = 1
-avoid = ["VARESE","Trenno"]
+timeout = 5
+
+#filters
+first_range = {"start": datetime.strptime("9/07/2021","%d/%m/%Y"),
+               "end": datetime.strptime("1/08/2021","%d/%m/%Y")}
+second_range = {"start": datetime.strptime("1/09/2021","%d/%m/%Y"),
+               "end": datetime.strptime("1/11/2021","%d/%m/%Y")}
+avoid = ["VARESE", "Trenno"]
+cf = ""
+ts = ""
+phone = ""
+province = ""
+comune = ""
+cap = ""
+
+
+def count_and_sleep(counter):
+    if ((counter % retries == 0 and retries != 1) or (retries == 1 and counter != 1)):
+        real_delay = delay + random.randint(-range, +range)
+        print(
+            f'sleeping for {round((real_delay) / 60 )} minute(s), I will retry at {ctime(time() + real_delay)}')
+        sleep(real_delay)
+        print(f'retry number {counter} - {ctime()}')
+
 
 def place_in_avoid(booking):
     for place in avoid:
-        if place in booking.text:
+        if place.lower() in booking.text.lower():
             return 1
     return 0
+
 
 def elabWait(driver, timeout):
     element_not_present = EC.invisibility_of_element_located(
@@ -53,6 +80,8 @@ def fillForms(driver):
     # third section
     element_present = EC.presence_of_element_located((By.ID, 'phoneNumber'))
     WebDriverWait(driver, timeout).until(element_present)
+    #for already booked
+    driver.find_element_by_xpath("//span[contains(.,'Prenota')]").click()
 
     elabWait(driver, timeout)
     select = Select(driver.find_element_by_xpath(
@@ -78,6 +107,7 @@ def fillForms(driver):
 
 
 def getBookings(driver):
+    bookings = []
     # privacy and cerca button
     element_present = EC.presence_of_element_located(
         (By.ID, 'phoneNumber'))
@@ -97,40 +127,95 @@ def getBookings(driver):
         (By.XPATH, "//span[contains(.,'Giorno')]"))
     WebDriverWait(driver, timeout).until(element_present)
 
-    bookings = driver.find_elements_by_xpath(
+    raw_bookings = driver.find_elements_by_xpath(
         "//label[contains(.,'Giorno')]")
+
+    #create booking instances and put first dose
+    for raw_booking in raw_bookings:
+        infos = raw_booking.text.split("\n")
+        data = re.search("Giorno: (\d\d/\d\d/\d\d\d\d)", infos[0])
+        first_dose = {"data": datetime.strptime(
+            data[1], "%d/%m/%Y"), "time": infos[1], "place": infos[2]}
+        bookings.append(Booking(raw_booking, first_dose))
+
     return bookings
+
+
+#loop back to privacy
+def back(driver):
+    btn = driver.find_element_by_xpath(
+        "//button[contains(.,'ANNULLA')]")
+    btn.click()
+    btn = driver.find_element_by_xpath("//button[contains(.,'Si')]")
+    btn.click()
+
+
+class Booking:
+    def __init__(self, element, first_dose):
+        #driver element
+        self.element = element
+        self.first_dose = first_dose
+        self.second_dose = {"start":"","end":""}
+
+
+def check_filters(bookings, first_range, second_range, driver):
+    for booking in bookings:
+        #check first dose range
+        if (booking.first_dose["data"] >= first_range["start"] and booking.first_dose["data"] <= first_range["end"]):
+            booking.element.click()
+            driver.find_element_by_xpath(
+                "//button[contains(.,'CONFERMA')]").click()
+            #extract second dose
+            match  = re.search("Tra il (\d\d/\d\d/\d\d\d\d) e il (\d\d/\d\d/\d\d\d\d)", driver.find_element_by_xpath("//li[contains(.,'Moderna o Pfizer')]").text)
+            booking.second_dose["start"] = datetime.strptime(match[1],"%d/%m/%Y")
+            booking.second_dose["end"] = datetime.strptime(match[2],"%d/%m/%Y")
+            #check second dose 
+            if (booking.second_dose["start"] <= second_range["end"] and booking.second_dose["end"] >= second_range["start"]):
+                #driver.find_element_by_xpath(
+                #    "//button[contains(.,'SI')]").click()
+                return booking
+            else:
+                driver.find_element_by_xpath(
+                    "//button[contains(.,'NO')]").click()
+    return 0
 
 
 counter = 0
 found = 0
 
 while True and not found:
-    try:
-        timeout = 5
-        driver = webdriver.Firefox()
-        driver.minimize_window()
 
-        # first part
-        fillForms(driver)
-        # second part
+    driver = webdriver.Firefox()
+ #   driver.minimize_window()
 
-        while True and not found:
-            counter += 1
-            # sleep for x every y retries
-            if ((counter % retries == 0 and retries != 1) or (retries == 1 and counter != 1)):
-                real_delay = delay + random.randint(-range, +range)
-                print(
-                    f'sleeping for {round((real_delay) / 60 )} minute(s), I will retry at {ctime(time() + real_delay)}')
-                sleep(real_delay)
+    # first part
+    fillForms(driver)
+    # second part
 
-            print(f'retry number {counter} - {ctime()}')
+    while True and not found:
+        counter += 1
+        # sleep for x every y retries
+        count_and_sleep(counter)
+        # get bookings
+        bookings = getBookings(driver)
+        # checks filters
+        found = check_filters(bookings, first_range, second_range, driver)
+        if found:
+            #prints and stops
+            print(f"First Dose: {datetime.strftime(found.first_dose['data'], '%d/%m/%y')}\n Place: {found.first_dose['place']}\n Time: {found.first_dose['time']}\n Second Dose: between {datetime.strftime(found.second_dose['start'], '%d/%m/%y')} and {datetime.strftime(found.second_dose['end'],'%d/%m/%y')}")
+            break
+        # loops back to privacy accepting
+        back(driver)
+    """except Exception as e:
+            print(e)
+            driver.close()
+            continue"""
 
-            # get bookings
-            bookings = getBookings(driver)
 
+"""
             for booking in bookings:
                 # search for appointments in set range
+
                 if re.search("Giorno: (1[5-9]|2[0-4])/07/2021", booking.text):
                     print(booking.text)
                     booking.click()
@@ -150,17 +235,4 @@ while True and not found:
                     else:
                         driver.find_element_by_xpath(
                             "//button[contains(.,'NO')]").click()
-
-            if found:
-                break
-            # loops back to privact accepting
-            btn = driver.find_element_by_xpath(
-                "//button[contains(.,'ANNULLA')]")
-            btn.click()
-            btn = driver.find_element_by_xpath("//button[contains(.,'Si')]")
-            btn.click()
-
-    except:
-        driver.delete_all_cookies()
-        driver.close()
-        continue
+"""
