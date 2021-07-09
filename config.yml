@@ -1,0 +1,32 @@
+#PERSONAL INFORMATIONS:
+
+  #mandatory
+CodiceFiscale :  DLCLNZ01E14H501Q
+#optional, leave 0 if you don't have it
+TesseraSanitaria : 80380001200151267758
+#mandatory, you will recieve the sms for confirming the booking here
+Phone : 3933615903
+#mandatory only if you have tessera sanitaria
+BirthDate : 14/05/2001
+
+#FILTERS:
+
+  #the vaccinations centers will be AROUND the place you select, but not only (if you put Milan you can get bookings in Como, etc.)
+
+FirstDose :
+  Start : 1/08/2021 
+  End :  1/09/2021
+
+SecondDose :
+  Start : 1/09/2021
+  End : 10/10/2021
+
+ 
+#TWEAKS:
+
+#delay between each retry (in seconds )
+Delay : 0
+#range of random seconds to add/subtract to the delay ( for example if delay = 10 and range = 2 , the actual delay will be between 8 and 12 seconds)
+Range : 0
+#seconds to wait before refreshing (put high if you have bad connection)
+Timeout : 5
