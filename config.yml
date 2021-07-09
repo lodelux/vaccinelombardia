@@ -7,7 +7,7 @@ TesseraSanitaria : 9898987897987987889
 #mandatory, you will recieve the sms for confirming the booking here
 Phone : 393198297829
 #mandatory only if you have tessera sanitaria (format: 09/07/2021)
-BirthDate : 0
+BirthDate : 
 
 #FILTERS:
 
