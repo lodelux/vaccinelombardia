@@ -9,9 +9,10 @@ from re import search
 from random import randint
 from datetime import datetime
 from yaml import full_load
-
+from os import path,getcwd
 # read from config.yml and translate dates to datetime object
-
+__location__ = path.realpath(
+    path.join(getcwd(), path.dirname(__file__)))
 
 def time_translator(config):
     config['FirstDose'] = {"Start": datetime.strptime(config['FirstDose']["Start"], "%d/%m/%Y"),
@@ -22,7 +23,7 @@ def time_translator(config):
 
 
 def config_extract():
-    with open('config.yml') as f:
+    with open(path.join(__location__,'config.yml')) as f:
         c = full_load(f)
         return time_translator(c)
 
@@ -194,8 +195,8 @@ def check_filters(bookings, config, driver):
                 match[2], "%d/%m/%Y")
             # check second dose
             if (booking.second_dose["start"] <= config["SecondDose"]["End"] and booking.second_dose["end"] >= config["SecondDose"]["Start"]):
-                #    driver.find_element_by_xpath(
-              #      "//button[contains(.,'SI')]").click()
+                driver.find_element_by_xpath(
+                "//button[contains(.,'SI')]").click()
                 return booking
             else:
                 driver.find_element_by_xpath(
