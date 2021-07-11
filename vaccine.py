@@ -90,7 +90,7 @@ def fillForms(driver, config):
     element_present = EC.presence_of_element_located((By.ID, 'phoneNumber'))
     WebDriverWait(driver, config["Timeout"]).until(element_present)
     # for already booked
-    driver.find_element_by_xpath("//span[contains(.,'Prenota')]").click()
+    #driver.find_element_by_xpath("//span[contains(.,'Prenota')]").click()
 
     elabWait(driver, config["Timeout"])
     select = Select(driver.find_element_by_xpath(
